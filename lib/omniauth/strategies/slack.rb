@@ -23,23 +23,34 @@ module OmniAuth
       uid { raw_info['user_id'] }
 
       info do
-        {
-          name: user_info['user']['profile']['real_name_normalized'],
-          email: user_info['user']['profile']['email'],
-          nickname: raw_info['user'],
-          first_name: user_info['user']['profile']['first_name'],
-          last_name: user_info['user']['profile']['last_name'],
-          description: user_info['user']['profile']['title'],
-          image: user_info['user']['profile']['image_192'],
+        hash = {}
+
+        unless skip_info?
+          hash.merge!(
+            name: user_info['user']['profile']['real_name_normalized'],
+            email: user_info['user']['profile']['email'],
+            nickname: raw_info['user'],
+            first_name: user_info['user']['profile']['first_name'],
+            last_name: user_info['user']['profile']['last_name'],
+            description: user_info['user']['profile']['title'],
+            image: user_info['user']['profile']['image_192']
+          )
+        end
+
+        hash.merge!(
           team: raw_info['team'],
           user: raw_info['user'],
           team_id: raw_info['team_id'],
           user_id: raw_info['user_id']
-        }
+        )
+
+        hash
       end
 
       extra do
-        {:raw_info => raw_info, :user_info => user_info}
+        hash = { :raw_info => raw_info }
+        hash.merge!(:user_info => user_info) unless skip_info?
+        hash
       end
 
       def user_info

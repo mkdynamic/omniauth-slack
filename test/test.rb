@@ -103,11 +103,11 @@ class UserInfoTest < StrategyTestCase
   def setup
     super
     @access_token = stub("OAuth2::AccessToken")
-    strategy.stubs(:access_token).returns(@access_token)
   end
 
   test "performs a GET to https://slack.com/api/users.info" do
     strategy.stubs(:raw_info).returns("user_id" => "U123")
+    strategy.stubs(:access_token).returns(@access_token)
     @access_token.expects(:get).with("/api/users.info?user=U123")
       .returns(stub_everything("OAuth2::Response"))
     strategy.user_info
@@ -115,8 +115,15 @@ class UserInfoTest < StrategyTestCase
 
   test "URI escapes user ID" do
     strategy.stubs(:raw_info).returns("user_id" => "../haxx?U123#abc")
+    strategy.stubs(:access_token).returns(@access_token)
     @access_token.expects(:get).with("/api/users.info?user=..%2Fhaxx%3FU123%23abc")
       .returns(stub_everything("OAuth2::Response"))
     strategy.user_info
+  end
+
+  test 'should not include extended_info when skip_info is specified' do
+    @options = { :skip_info => true }
+    strategy.stubs(:raw_info).returns(:team => 'foo', :team_id => 'T123', :user => 'bar', :user_id => 'U123')
+    assert_equal %w[team user team_id user_id], strategy.info.keys.map(&:to_s)
   end
 end
